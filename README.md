@@ -76,14 +76,7 @@ yaml
 Copy code
 
 ---
+#snapshots
+<img width="1536" height="1024" alt="image" src="https://github.com/user-attachments/assets/1a53fc67-a3b2-4dfb-8639-3ed3356521c7" />
 
-✅ Steps for you now:  
-1. Open `README.md` in your project folder.  
-2. Paste this content.  
-3. Save the file.  
-4. Run these commands in PowerShell:  
 
-```bash
-git add README.md
-git commit -m "Update README with full project description"
-git push
