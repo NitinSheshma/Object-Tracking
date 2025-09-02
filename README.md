@@ -28,13 +28,11 @@ venv\Scripts\activate   # On Windows
 Install requirements:
 
 bash
-Copy code
 pip install -r requirements.txt
 ▶️ Usage
 Run the tracking script with your webcam:
 
 bash
-Copy code
 python yolo_webcam_tracking.py
 Press q to quit the live stream.
 
@@ -60,23 +58,14 @@ PyTorch
 
 NumPy
 
-📸 Example Output
-Here’s how the tracking looks in action (bounding boxes + IDs):
-
-
-(You can replace example.png with your own screenshot or GIF from a tracking run)
-
 🤝 Contributing
 Feel free to fork this repo, open issues, or submit pull requests. Contributions are welcome!
 
 📜 License
 This project is licensed under the MIT License – you are free to use, modify, and distribute it.
 
-yaml
-Copy code
 
 ---
-#snapshots
-<img width="1536" height="1024" alt="image" src="https://github.com/user-attachments/assets/1a53fc67-a3b2-4dfb-8639-3ed3356521c7" />
+
 
 
