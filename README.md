@@ -1,71 +1,65 @@
-# 🎯 Object-Tracking  
+# Object Tracking
 
-A real-time **object tracking project** using **Python, OpenCV, and YOLOv8**.  
-This project captures video from your webcam and uses Ultralytics YOLOv8 + ByteTrack to detect and track multiple objects with unique IDs in real-time.  
+A real-time object detection and tracking application using Python, OpenCV, YOLOv8, and ByteTrack.
 
----
+## Features
 
-## 🚀 Features
-- Real-time object detection and tracking via **YOLOv8**  
-- Assigns **unique IDs** to objects with **ByteTrack**  
-- Works with **webcam** or video files  
-- Easy to set up and run on any system  
+- Real-time tracking from a webcam
+- Tracking from a local video file
+- Persistent object IDs with ByteTrack
+- Optional class filtering
+- Measured display FPS
 
----
+## Requirements
 
-## 📦 Installation
+- Python 3.10â€“3.12
+- A working webcam, or a local video file
 
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/NitinSheshma/Object-Tracking.git
-   cd Object-Tracking
-(Optional but recommended) Create a virtual environment:
+## Installation
 
-bash
-Copy code
-python -m venv venv
-venv\Scripts\activate   # On Windows
-Install requirements:
-
-bash
+```powershell
+cd Object-Tracking
+py -3.12 -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install --upgrade pip
 pip install -r requirements.txt
-▶️ Usage
-Run the tracking script with your webcam:
+```
 
-bash
-python yolo_webcam_tracking.py
-Press q to quit the live stream.
+## Usage
 
-Change CAM_INDEX in the script if you have multiple cameras.
+Track the default webcam:
 
-You can also modify the script to use a video file instead of a webcam.
+```powershell
+python nitin.py
+```
 
-📂 Project Structure
-bash
-Copy code
-Object-Tracking/
-│── yolo_webcam_tracking.py   # Main script for YOLOv8 + webcam tracking
-│── requirements.txt          # Dependencies
-│── README.md                 # Project description
-🛠️ Tech Stack
-Python 3.10+
+Use another camera:
 
-OpenCV
+```powershell
+python nitin.py --source 1
+```
 
-Ultralytics YOLOv8
+Track a video file:
 
-PyTorch
+```powershell
+python nitin.py --source path\to\video.mp4
+```
 
-NumPy
+Track only people (COCO class 0):
 
-🤝 Contributing
-Feel free to fork this repo, open issues, or submit pull requests. Contributions are welcome!
+```powershell
+python nitin.py --classes 0
+```
 
-📜 License
-This project is licensed under the MIT License – you are free to use, modify, and distribute it.
+Press `q` while the video window is active to stop the program.
 
+## Main options
 
----
+- `--source`: Camera index or video path (default: `0`)
+- `--confidence`: Detection confidence threshold (default: `0.35`)
+- `--iou`: NMS IoU threshold (default: `0.45`)
+- `--classes`: Space-separated COCO class IDs
+- `--device`: Device such as `cpu`, `0`, or `mps`
 
-
+Run `python nitin.py --help` for all options.
 

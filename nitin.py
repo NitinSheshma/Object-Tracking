@@ -1,70 +1,85 @@
+import argparse
+from pathlib import Path
+import time
+
 import cv2
 from ultralytics import YOLO
 
-# ---- Settings you can tweak ----
-MODEL_WEIGHTS = "yolov8n.pt"   # small & fast; try yolov8s.pt for better accuracy
-CONF_THRESH   = 0.35           # detection confidence
-IOU_THRESH    = 0.45           # NMS IoU threshold
-CLASSES_KEEP  = None           # e.g., [0] to track only 'person'; None = all COCO classes
-CAM_INDEX     = 0              # webcam index: try 1 or 2 if you have multiple cameras
-WINDOW_NAME   = "YOLOv8 ByteTrack — Webcam"
-# --------------------------------
+PROJECT_DIR = Path(__file__).resolve().parent
+MODEL_WEIGHTS = PROJECT_DIR / "yolov8n.pt"
+WINDOW_NAME = "YOLOv8 ByteTrack"
 
-# Load model (auto-downloads weights on first run)
-# For CPU only, add: YOLO(MODEL_WEIGHTS).to('cpu') or pass device='cpu' in .track()
-model = YOLO(MODEL_WEIGHTS)
 
-# Open a quick probe to ensure the camera index is valid before handing to Ultralytics
-probe = cv2.VideoCapture(CAM_INDEX)
-if not probe.isOpened():
-    print(f"Error: Could not open webcam at index {CAM_INDEX}. Try CAM_INDEX = 1 or 2.")
-    raise SystemExit(1)
-probe.release()
+def parse_args():
+    parser = argparse.ArgumentParser(description="Track objects in a webcam or video file.")
+    parser.add_argument("--source", default="0", help="Camera index (default: 0) or path to a video file")
+    parser.add_argument("--confidence", type=float, default=0.35, help="Detection confidence threshold")
+    parser.add_argument("--iou", type=float, default=0.45, help="NMS IoU threshold")
+    parser.add_argument("--classes", type=int, nargs="*", help="COCO class IDs to keep, for example: --classes 0")
+    parser.add_argument("--device", default=None, help="Inference device, for example: cpu, 0, or mps")
+    return parser.parse_args()
 
-# Ultralytics tracking with ByteTrack. We render frames ourselves, so show=False.
-# Notes:
-# - 'persist=True' keeps track IDs across frames
-# - 'tracker="bytetrack.yaml"' enables ByteTrack (bundled with Ultralytics)
-stream = model.track(
-    source=CAM_INDEX,
-    stream=True,
-    tracker="bytetrack.yaml",
-    persist=True,
-    conf=CONF_THRESH,
-    iou=IOU_THRESH,
-    classes=CLASSES_KEEP,
-    show=False,
-    verbose=False,
-    # device="cpu",   # uncomment to force CPU
-)
 
-# Names for class IDs (COCO)
-names = model.model.names if hasattr(model.model, "names") else {}
+def resolve_source(source):
+    if source.isdigit():
+        return int(source)
+    video_path = Path(source)
+    if not video_path.is_absolute():
+        video_path = PROJECT_DIR / video_path
+    if not video_path.exists():
+        raise FileNotFoundError(f"Video file not found: {video_path}")
+    return str(video_path)
 
-print("Press 'q' to quit.")
-for result in stream:
-    # result.plot() returns an annotated BGR frame with boxes, labels, and track IDs
-    frame = result.plot()
 
-    # Optionally, overlay simple FPS from Ultralytics timing if available
-    if hasattr(result, "speed") and isinstance(result.speed, dict):
-        fps = 1000.0 / max(result.speed.get("inference", 1.0), 1e-3)
-        cv2.putText(frame, f"FPS ~ {fps:.1f}", (10, 30),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 2)
+def main():
+    args = parse_args()
+    source = resolve_source(args.source)
 
-    # Optionally, draw your own labels with track IDs (already shown by plot(), but this shows how to access data)
-    # boxes = result.boxes
-    # if boxes is not None and boxes.id is not None:
-    #     ids = boxes.id.int().tolist()
-    #     for (xyxy, cls, tid) in zip(boxes.xyxy.cpu().numpy(), boxes.cls.int().tolist(), ids):
-    #         x1, y1, x2, y2 = map(int, xyxy)
-    #         label = f"{names.get(cls, str(cls))} #{tid}"
-    #         cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
-    #         cv2.putText(frame, label, (x1, max(20, y1 - 10)),
-    #                     cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
+    if not MODEL_WEIGHTS.exists():
+        raise FileNotFoundError(f"Model weights not found: {MODEL_WEIGHTS}")
 
-    cv2.imshow(WINDOW_NAME, frame)
-    if cv2.waitKey(1) & 0xFF == ord('q'):
-        break
+    if isinstance(source, int):
+        probe = cv2.VideoCapture(source)
+        if not probe.isOpened():
+            probe.release()
+            raise RuntimeError(f"Could not open webcam at index {source}. Try --source 1.")
+        probe.release()
 
-cv2.destroyAllWindows()
+    model = YOLO(str(MODEL_WEIGHTS))
+    stream = model.track(
+        source=source,
+        stream=True,
+        tracker="bytetrack.yaml",
+        persist=True,
+        conf=args.confidence,
+        iou=args.iou,
+        classes=args.classes,
+        device=args.device,
+        show=False,
+        verbose=False,
+    )
+
+    previous_time = time.perf_counter()
+    print("Press 'q' to quit.")
+
+    try:
+        for result in stream:
+            frame = result.plot()
+            current_time = time.perf_counter()
+            fps = 1.0 / max(current_time - previous_time, 1e-6)
+            previous_time = current_time
+            cv2.putText(frame, f"FPS: {fps:.1f}", (10, 30), cv2.FONT_HERSHEY_SIMPLEX,
+                        0.8, (255, 255, 255), 2, cv2.LINE_AA)
+            cv2.imshow(WINDOW_NAME, frame)
+            if cv2.waitKey(1) & 0xFF == ord("q"):
+                break
+    finally:
+        cv2.destroyAllWindows()
+
+
+if __name__ == "__main__":
+    try:
+        main()
+    except (FileNotFoundError, RuntimeError) as error:
+        print(f"Error: {error}", file=__import__("sys").stderr)
+        raise SystemExit(1)
